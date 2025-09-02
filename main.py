@@ -174,5 +174,8 @@ print(ReedSolomon_decode(ReedSolomon_encode(encodeval))) #should return the orig
 fakevalue = [64, 0, 132, 84, 196, 196, 240, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 95, 105, 74, 31, 73, 149, 139]       
 print(ReedSolomon_decode(fakevalue)) #dont gives error seems to correct lets try diffrent cases
 fakevalue2 = [64, 84, 0, 84, 196, 196, 240, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 95, 105, 74, 31, 73, 149, 139]       
-print(ReedSolomon_decode(fakevalue))
+print(ReedSolomon_decode(fakevalue2))
 #seems to work for single byte errors 
+
+qrdata = qr_decode_byte_mode(ReedSolomon_decode(fakevalue2)) 
+print(qrdata) #should return HELLO
