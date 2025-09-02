@@ -1,26 +1,5 @@
 import string
 
-def encode(data: string) -> bytes:
-    """Encode a string to bytes using UTF-8 encoding."""
-    return data.encode('utf-8') 
-
-def decode(data: bytes) -> string:
-    """Decode bytes to a string using UTF-8 encoding."""
-    return data.decode('utf-8')
-
-encode_result = encode("Hello, World!")
-print(encode_result)  # Output: b'Hello, World!'
-decode_result = decode(encode_result)
-print(decode_result)  # Output: Hello, World!
-
-def encode_byte_mode(data: str) -> list[int]:
-    """Encode a string to a list of byte values."""
-    return list(data.encode('utf-8'))   
-def decode_byte_mode(data: list[int]) -> str:
-    """Decode a list of byte values to a string."""
-    return bytes(data).decode('utf-8')
-encode_byte_mode_result = encode_byte_mode("Hello, World!")
-print(encode_byte_mode_result)  # Output: [72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33]
 
 print("will try with qr")
 def qr_encode_byte_mode(data: str) -> list[int]: #will only do 1L version
@@ -47,7 +26,6 @@ def qr_encode_byte_mode(data: str) -> list[int]: #will only do 1L version
         else:
             codewords.append(0x11)
     return codewords
-print(qr_encode_byte_mode("HELLO"))
 
 def qr_decode_byte_mode(data: list[int]) -> str:
     """Decode a list of byte values from 1-L qr code byte mode to a string."""
@@ -69,4 +47,14 @@ def qr_decode_byte_mode(data: list[int]) -> str:
         chars.append(chr(byte_value))
 
     return ''.join(chars)
+
+print(qr_encode_byte_mode("HELLO"))
+
 print(qr_decode_byte_mode(qr_encode_byte_mode("HELLO")))
+list1 = [64, 84, 132, 84, 196, 196, 240, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236]
+list2 = [0, 84, 132, 84, 196, 196, 240, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236] #will not work as first byte is wrong its decide the mode
+list3 = [64, 0, 132, 84, 196, 196, 240, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236] #will not give correct result as second byte is wrong
+print(qr_decode_byte_mode(list1))
+print(qr_decode_byte_mode(list3))
+#so the point is to make list 3 work even when it has one wrong byte using error correction
+#i need to implement reed solomon error correction for that
