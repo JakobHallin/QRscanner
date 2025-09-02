@@ -123,4 +123,29 @@ def ReedSolomon_encode(data19: list[int]) -> list[int]:
 encodeval = qr_encode_byte_mode("HELLO")
 print(ReedSolomon_encode(encodeval))
 #now we can see that we added 7 error correction codewords to the original 19 codewords
-#now we need to implement reed solomon decode with error correction
+#now we need to implement reed solomon decode with error correction will only correct 1 byte error otherwise i need to implement more complex algorithm
+def ReedSolomon_decode(data26: list[int]) -> list[int]:
+    """Decode data using Reed-Solomon error correction (for QR code version 1-L)."""
+    if len(data26) != 26:
+        raise ValueError("Data must be exactly 26 bytes for version 1-L")
+
+    # Calculate syndromes
+    syndromes = []
+    error = False
+    for i in range(7):
+        x = EXP_TABLE[i] # α^(i+1)
+        s = 0 
+        for j in range(26):
+            s = _galiois_mul(s, x) ^ data26[j]
+        syndromes.append(s)
+
+    if max(syndromes) == 0:
+        return data26[:19]  # No errors detected
+
+    #we can now see if we have error it will now return empty list if one is wrong
+    return []  # Placeholder, no error correction implemented yet
+
+print("looking at decode using reed solomon")
+print(ReedSolomon_decode(ReedSolomon_encode(encodeval))) #should return the original 19 codewords
+fakevalue = [64, 0, 132, 84, 196, 196, 240, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 95, 105, 74, 31, 73, 149, 139]       
+print(ReedSolomon_decode(fakevalue)) #should give empty list as first byte is wrong
