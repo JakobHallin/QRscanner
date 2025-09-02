@@ -57,4 +57,70 @@ list3 = [64, 0, 132, 84, 196, 196, 240, 17, 236, 17, 236, 17, 236, 17, 236, 17, 
 print(qr_decode_byte_mode(list1))
 print(qr_decode_byte_mode(list3))
 #so the point is to make list 3 work even when it has one wrong byte using error correction
-#i need to implement reed solomon error correction for that
+#I need to implement reed solomon error correction for that but first byte mode cant be wrong as it decide the mode
+
+#so lets implement reed solomon error correction
+# to do that i first need to implement galois field arithmetic this defines the field GF(2^8) used in QR codes i have 256 elements 0-255 
+def _build_galois_tables():
+    """Build the Galois field tables for GF(2^8)."""
+    global EXP_TABLE, LOG_TABLE
+    EXP_TABLE = [0] * 512  # Extended to 512 for easy multiplication
+    LOG_TABLE = [0] * 256
+
+    x = 1
+    for i in range(255):
+        EXP_TABLE[i] = x
+        LOG_TABLE[x] = i
+        x <<= 1
+        if x & 0x100:  # If x is 256 or more, reduce it
+            x ^= 0x11d  # Primitive polynomial
+
+    for i in range(255, 512):
+        EXP_TABLE[i] = EXP_TABLE[i - 255]
+    return EXP_TABLE, LOG_TABLE
+
+def _galiois_mul(x: int, y: int) -> int:
+    """Multiply two numbers in GF(2^8)."""
+    if x == 0 or y == 0:
+        return 0
+    return EXP_TABLE[LOG_TABLE[x] + LOG_TABLE[y]]
+def _poly_mul(p: list[int], q: list[int]) -> list[int]:
+    """Multiply two polynomials in GF(2^8)."""
+    result = [0] * (len(p) + len(q) - 1)
+    for i in range(len(p)):
+        for j in range(len(q)):
+            result[i + j] ^= _galiois_mul(p[i], q[j])
+    return result
+
+_PRIM = 0x11d # Primitive polynomial for GF(2^8)
+EXP_TABLE, LOG_TABLE = _build_galois_tables() # Initialize Galois field tables
+
+# Generator polynomial for 7 error correction codewords (version 1-L)
+def _generate_generator_poly(degree: int) -> list[int]:
+    """Generate the generator polynomial for Reed-Solomon encoding."""
+    g = [1]
+    for i in range(degree):
+        g = _poly_mul(g, [1, EXP_TABLE[i]])# Multiply by (x - α^i)
+    return g
+
+errorcorrection_poly = _generate_generator_poly(7)  # 7 error correction codewords for version 1-L
+
+def ReedSolomon_encode(data19: list[int]) -> list[int]:
+    """Encode data using Reed-Solomon error correction (for QR code version 1-L)."""
+    if len(data19) != 19:
+        raise ValueError("Data must be exactly 19 bytes for version 1-L")
+
+    ecc = [0] * 7  # 7 error correction codewords for version 1-L
+    for byte in data19:
+        factor = byte ^ ecc[0]
+        # Shift left
+        ecc = ecc[1:] + [0]
+        for i in range(7):
+            ecc[i] ^= _galiois_mul(factor, errorcorrection_poly[i + 1])
+
+    return data19 + ecc  # Return data + error correction codewords
+
+encodeval = qr_encode_byte_mode("HELLO")
+print(ReedSolomon_encode(encodeval))
+#now we can see that we added 7 error correction codewords to the original 19 codewords
+#now we need to implement reed solomon decode with error correction
