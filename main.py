@@ -138,7 +138,7 @@ def ReedSolomon_decode(data26: list[int]) -> list[int]:
     syndromes = []
     error = False
     for i in range(7):
-        x = EXP_TABLE[i] # α^(i+1)
+        x = EXP_TABLE[i] # α^(i)
         s = 0 
         for j in range(26):
             s = _galois_mul(s, x) ^ data26[j]
@@ -150,10 +150,29 @@ def ReedSolomon_decode(data26: list[int]) -> list[int]:
     # For simplicity, we will only correct single errors will need more complex algorithm for multiple errors
     S0=syndromes[0] # is the error value
     #we can now see if we have error it will now return empty list if one is wrong
-    return []  # Placeholder, no error correction implemented yet
+    r = _galois_mul(syndromes[1], _galois_inv(S0)) #position of error
+    pos_pow = LOG_TABLE[r]           # this is (n-1-pos)
+    n = len(data26)
+    pos = (n - 1) - pos_pow
+     # Apply correction: magnitude = S0
+    corrected = data26[:]
+    corrected[pos] ^= S0
+    check = []
+    for i in range(7):
+        x = EXP_TABLE[i]
+        s = 0
+        for j in range(26):
+            s = _galois_mul(s, x) ^ corrected[j]
+        check.append(s)
+    if max(check) != 0:
+        raise ValueError("Unable to correct (likely >1 error).")
 
+    return corrected[:19]
 
 print("looking at decode using reed solomon")
 print(ReedSolomon_decode(ReedSolomon_encode(encodeval))) #should return the original 19 codewords
 fakevalue = [64, 0, 132, 84, 196, 196, 240, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 95, 105, 74, 31, 73, 149, 139]       
-print(ReedSolomon_decode(fakevalue)) #should give empty list as first byte is wrong
+print(ReedSolomon_decode(fakevalue)) #dont gives error seems to correct lets try diffrent cases
+fakevalue2 = [64, 84, 0, 84, 196, 196, 240, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 95, 105, 74, 31, 73, 149, 139]       
+print(ReedSolomon_decode(fakevalue))
+#seems to work for single byte errors 
