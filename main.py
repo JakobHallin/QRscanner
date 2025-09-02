@@ -79,7 +79,7 @@ def _build_galois_tables():
         EXP_TABLE[i] = EXP_TABLE[i - 255]
     return EXP_TABLE, LOG_TABLE
 
-def _galiois_mul(x: int, y: int) -> int:
+def _galois_mul(x: int, y: int) -> int:
     """Multiply two numbers in GF(2^8)."""
     if x == 0 or y == 0:
         return 0
@@ -89,8 +89,13 @@ def _poly_mul(p: list[int], q: list[int]) -> list[int]:
     result = [0] * (len(p) + len(q) - 1)
     for i in range(len(p)):
         for j in range(len(q)):
-            result[i + j] ^= _galiois_mul(p[i], q[j])
+            result[i + j] ^= _galois_mul(p[i], q[j])
     return result
+def _galois_inv(x: int) -> int:
+    """Find the multiplicative inverse in GF(2^8)."""
+    if x == 0:
+        raise ZeroDivisionError("Cannot invert zero in a Galois field")
+    return EXP_TABLE[255 - LOG_TABLE[x]]
 
 _PRIM = 0x11d # Primitive polynomial for GF(2^8)
 EXP_TABLE, LOG_TABLE = _build_galois_tables() # Initialize Galois field tables
@@ -116,7 +121,7 @@ def ReedSolomon_encode(data19: list[int]) -> list[int]:
         # Shift left
         ecc = ecc[1:] + [0]
         for i in range(7):
-            ecc[i] ^= _galiois_mul(factor, errorcorrection_poly[i + 1])
+            ecc[i] ^= _galois_mul(factor, errorcorrection_poly[i + 1])
 
     return data19 + ecc  # Return data + error correction codewords
 
@@ -136,14 +141,17 @@ def ReedSolomon_decode(data26: list[int]) -> list[int]:
         x = EXP_TABLE[i] # α^(i+1)
         s = 0 
         for j in range(26):
-            s = _galiois_mul(s, x) ^ data26[j]
+            s = _galois_mul(s, x) ^ data26[j]
         syndromes.append(s)
 
     if max(syndromes) == 0:
         return data26[:19]  # No errors detected
 
+    # For simplicity, we will only correct single errors will need more complex algorithm for multiple errors
+    S0=syndromes[0] # is the error value
     #we can now see if we have error it will now return empty list if one is wrong
     return []  # Placeholder, no error correction implemented yet
+
 
 print("looking at decode using reed solomon")
 print(ReedSolomon_decode(ReedSolomon_encode(encodeval))) #should return the original 19 codewords
