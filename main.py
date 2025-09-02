@@ -179,3 +179,5 @@ print(ReedSolomon_decode(fakevalue2))
 
 qrdata = qr_decode_byte_mode(ReedSolomon_decode(fakevalue2)) 
 print(qrdata) #should return HELLO
+
+#need to look at QR documentation to implement the placment of codewords in the QR matrix
