@@ -48,3 +48,25 @@ def qr_encode_byte_mode(data: str) -> list[int]: #will only do 1L version
             codewords.append(0x11)
     return codewords
 print(qr_encode_byte_mode("HELLO"))
+
+def qr_decode_byte_mode(data: list[int]) -> str:
+    """Decode a list of byte values from 1-L qr code byte mode to a string."""
+    # Convert integers back to bitstream
+    bitstream = ''.join(format(byte, '08b') for byte in data)
+
+    # Read mode indicator (first 4 bits)
+    mode_indicator = bitstream[:4]
+    if mode_indicator != "0100":
+        raise ValueError("Unsupported mode indicator")
+
+    # Read character count (next 8 bits for version 1 Byte mode)
+    char_count = int(bitstream[4:12], 2)
+
+    # Read the characters
+    chars = []
+    for i in range(char_count):
+        byte_value = int(bitstream[12 + i*8:20 + i*8], 2)
+        chars.append(chr(byte_value))
+
+    return ''.join(chars)
+print(qr_decode_byte_mode(qr_encode_byte_mode("HELLO")))
