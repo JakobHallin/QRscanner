@@ -184,13 +184,13 @@ print(qrdata) #should return HELLO
 def finderPattern(top: int, left: int, matrix: list[list[int]]):
     """Place a finder pattern at the specified position in the matrix."""
     pattern = [
-        [1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 0, 0, 0, 0, 1],
-        [1, 0, 1, 1, 1, 0, 1],
-        [1, 0, 1, 1, 1, 0, 1],
-        [1, 0, 1, 1, 1, 0, 1],
-        [1, 0, 0, 0, 0, 0, 1],
-        [1, 1, 1, 1, 1, 1, 1],
+        [5, 5, 5, 5, 5, 5, 5],
+        [5, 4, 4, 4, 4, 4, 5],
+        [5, 4, 5, 5, 5, 4, 5],
+        [5, 4, 5, 5, 5, 4, 5],
+        [5, 4, 5, 5, 5, 4, 5],
+        [5, 4, 4, 4, 0, 4, 5],
+        [5, 5, 5, 5, 5, 5, 5],
     ]
     size = len(matrix)
     for r in range(-1, 8):   # -1..7 → separator + 7x7 core + separator
@@ -200,16 +200,16 @@ def finderPattern(top: int, left: int, matrix: list[list[int]]):
                 if 0 <= r < 7 and 0 <= c < 7:
                     matrix[rr][cc] = pattern[r][c]
                 else:
-                    matrix[rr][cc] = 0  # separator
+                    matrix[rr][cc] = 4  # separator
 
 def alignmentPattern(top: int, left: int, matrix: list[list[int]]):
     """Place an alignment pattern at the specified position in the matrix."""
     pattern = [
-        [1, 1, 1, 1, 1],
-        [1, 0, 0, 0, 1],
-        [1, 0, 1, 0, 1],
-        [1, 0, 0, 0, 1],
-        [1, 1, 1, 1, 1],
+        [5, 5, 5, 5, 5],
+        [5, 4, 4, 4, 5],
+        [5, 4, 5, 4, 5],
+        [5, 4, 4, 4, 5],
+        [5, 5, 5, 5, 5],
     ]
     for r in range(5):
         for c in range(5):
@@ -258,7 +258,7 @@ def reserve_format_info_areas(matrix: list[list[int]]):
             matrix[n - 1 - i][8] = -2
 
     # Dark module (always black)
-    matrix[n - 8][8] = 1
+    matrix[n - 8][8] = 5
 
 def place_patterns(matrix: list[list[int]]):
     """Place finder and alignment patterns in the QR code matrix."""
@@ -280,7 +280,7 @@ def print_matrix(matrix: list[list[int]]):
     """Print the QR code matrix."""
     for row in matrix:
         print(' '.join(
-            '#' if cell == 1 else '.' if cell == 0 else '?' if cell == -2 else ' '
+            '#' if cell == 1 else '.' if cell == 0 else '?' if cell == -2 else '#' if cell == 1 else '.' if cell == 4 else '#' if cell == 5 else' '
             for cell in row
         ))
 
@@ -288,3 +288,68 @@ print("looking at placement")
 matrix = twentyfiveby25matrix()
 place_patterns(matrix)
 print_matrix(matrix)
+
+def place_data(matrix: list[list[int]], data: list[int]):
+    """Place data bits into the QR code matrix."""
+    n = len(matrix)
+    bitstream = ''.join(format(byte, '08b') for byte in data)  # Convert data to bitstream
+    bit_index = 0
+
+    # Start from the bottom-right corner
+    col = n - 1
+    row = n - 1
+    direction = -1  # -1 for up, 1 for down
+
+    while col > 0:
+        if col == 6:  # Skip vertical timing pattern
+            col -= 1
+
+        for i in range(n):
+            r = row + direction * i
+            for c in [col, col - 1]:  # Right column first, then left
+                if matrix[r][c] == -1:  # Only place in unset areas
+                    if bit_index < len(bitstream):
+                        matrix[r][c] = int(bitstream[bit_index])
+                        bit_index += 1
+                    else:
+                        matrix[r][c] = 0  # Pad with white if no more data
+
+        row += direction * (n - 1)
+        direction *= -1  # Change direction
+        col -= 2  # Move to the next pair of columns
+    return matrix
+print("looking at placement with data")
+data_with_ecc = ReedSolomon_encode(qr_encode_byte_mode("HELLO"))    
+matrix_with_data = place_data(matrix, data_with_ecc)
+print_matrix(matrix_with_data)
+
+#now we have a qr code matrix with data placed in it
+#mask it but need to considcer not to mask the patterns
+def apply_mask(matrix: list[list[int]], mask_pattern: int) -> list[list[int]]:
+    """Apply a mask pattern to the QR code matrix but avoid the pattenrs."""
+    n = len(matrix)
+    for r in range(n):
+        for c in range(n):
+            if matrix[r][c] in (0, 1):  # Only apply mask to data areas
+                if mask_pattern == 0 and (r + c) % 2 == 0:
+                    matrix[r][c] ^= 1
+                elif mask_pattern == 1 and r % 2 == 0:
+                    matrix[r][c] ^= 1
+                elif mask_pattern == 2 and c % 3 == 0:
+                    matrix[r][c] ^= 1
+                elif mask_pattern == 3 and (r + c) % 3 == 0:
+                    matrix[r][c] ^= 1
+                elif mask_pattern == 4 and (r // 2 + c // 3) % 2 == 0:
+                    matrix[r][c] ^= 1
+                elif mask_pattern == 5 and ((r * c) % 2 + (r * c) % 3) == 0:
+                    matrix[r][c] ^= 1
+                elif mask_pattern == 6 and (((r * c) % 2 + (r * c) % 3) % 2) == 0:
+                    matrix[r][c] ^= 1
+                elif mask_pattern == 7 and (((r + c) % 2 + (r * c) % 3) % 2) == 0:
+                    matrix[r][c] ^= 1
+    return matrix
+    
+apply_mask(matrix_with_data, 0)
+print("looking at placement with data and mask")
+print()
+print_matrix(matrix_with_data)
