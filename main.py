@@ -345,3 +345,30 @@ apply_mask(matrix_with_data, 0)
 print("looking at placement with data and mask")
 print()
 print_matrix(matrix_with_data)
+
+def place_format_info(matrix, ec_level='L', mask=0):
+    # Format strings for EC=L and mask=0 (precomputed)
+    format_str = "111011111000100"
+    n = len(matrix)
+
+    # Top-left around finder
+    for i in range(6):
+        matrix[i][8] = int(format_str[i])  # col 8, rows 0–5
+    matrix[7][8] = int(format_str[6])
+    matrix[8][8] = int(format_str[7])
+    matrix[8][7] = int(format_str[8])
+    for i in range(6):
+        matrix[8][5 - i] = int(format_str[9 + i])
+
+    # Top-right
+    for i in range(8):
+        matrix[8][n - 1 - i] = int(format_str[i])
+
+    # Bottom-left
+    for i in range(7):
+        matrix[n - 1 - i][8] = int(format_str[8 + i])
+
+place_format_info(matrix_with_data)
+print("looking at placement with data and mask and format info")
+print()
+print_matrix(matrix_with_data)
