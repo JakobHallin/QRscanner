@@ -271,19 +271,20 @@ def place_patterns(matrix: list[list[int]]):
 
     # Place alignment pattern (for version 1, only one at (18,18))
     alignmentPattern(16, 16, matrix)
-    #padding
-    #paddingallignment(matrix)
     # Place timing patterns
     timePattern(matrix)
     # Reserve format information areas
     reserve_format_info_areas(matrix)
 
+def print_matrix(matrix: list[list[int]]):
+    """Print the QR code matrix."""
+    for row in matrix:
+        print(' '.join(
+            '#' if cell == 1 else '.' if cell == 0 else '?' if cell == -2 else ' '
+            for cell in row
+        ))
 
 print("looking at placement")
 matrix = twentyfiveby25matrix()
 place_patterns(matrix)
-for row in matrix:
-    print(' '.join(
-        '#' if cell == 1 else '.' if cell == 0 else '?' if cell == -2 else ' '
-        for cell in row
-    ))
+print_matrix(matrix)
