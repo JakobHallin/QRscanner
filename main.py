@@ -2,7 +2,7 @@ import string
 
 
 print("will try with qr")
-def qr_encode_byte_mode(data: str) -> list[int]: #will only do 1L version
+def qr_encode_byte_mode(data: str) -> list[int]: 
     """Encode a string to 1-L qr code byte mode."""
     bitstream = "0100"  # Mode indicator for byte mode //this tells we use byte
     
@@ -19,7 +19,7 @@ def qr_encode_byte_mode(data: str) -> list[int]: #will only do 1L version
     #  Convert to integers (codewords)
     codewords = [int(bitstream[i:i+8], 2) for i in range(0, len(bitstream), 8)]
 
-    # Pad with 0xEC and 0x11 to reach the required length for version 1-L (19 codewords)
+    # Pad with 0xEC and 0x11 to reach the required length for  (19 codewords)
     while len(codewords) < 19:
         if len(codewords) % 2 == 0:
             codewords.append(0xEC)
@@ -100,7 +100,7 @@ def _galois_inv(x: int) -> int:
 _PRIM = 0x11d # Primitive polynomial for GF(2^8)
 EXP_TABLE, LOG_TABLE = _build_galois_tables() # Initialize Galois field tables
 
-# Generator polynomial for 7 error correction codewords (version 1-L)
+# Generator polynomial for 7 error correction codewords 
 def _generate_generator_poly(degree: int) -> list[int]:
     """Generate the generator polynomial for Reed-Solomon encoding."""
     g = [1]
@@ -108,14 +108,14 @@ def _generate_generator_poly(degree: int) -> list[int]:
         g = _poly_mul(g, [1, EXP_TABLE[i]])# Multiply by (x - α^i)
     return g
 
-errorcorrection_poly = _generate_generator_poly(7)  # 7 error correction codewords for version 1-L
+errorcorrection_poly = _generate_generator_poly(7)  # 7 error correction codewords for 
 
 def ReedSolomon_encode(data19: list[int]) -> list[int]:
-    """Encode data using Reed-Solomon error correction (for QR code version 1-L)."""
+    """Encode data using Reed-Solomon error correction """
     if len(data19) != 19:
-        raise ValueError("Data must be exactly 19 bytes for version 1-L")
+        raise ValueError("Data must be exactly 19 bytes for ")
 
-    ecc = [0] * 7  # 7 error correction codewords for version 1-L
+    ecc = [0] * 7  # 7 error correction codewords for 
     for byte in data19:
         factor = byte ^ ecc[0]
         # Shift left
@@ -130,9 +130,9 @@ print(ReedSolomon_encode(encodeval))
 #now we can see that we added 7 error correction codewords to the original 19 codewords
 #now we need to implement reed solomon decode with error correction will only correct 1 byte error otherwise i need to implement more complex algorithm
 def ReedSolomon_decode(data26: list[int]) -> list[int]:
-    """Decode data using Reed-Solomon error correction (for QR code version 1-L)."""
+    """Decode data using Reed-Solomon error correction."""
     if len(data26) != 26:
-        raise ValueError("Data must be exactly 26 bytes for version 1-L")
+        raise ValueError("Data must be exactly 26 bytes")
 
     # Calculate syndromes
     syndromes = []
@@ -218,23 +218,15 @@ def alignmentPattern(top: int, left: int, matrix: list[list[int]]):
 def twentyfiveby25matrix() -> list[list[int]]:
     """Create a 25x25 matrix initialized to -1 (unset)."""
     return [[-1 for _ in range(25)] for _ in range(25)]
-#def paddingallignment(matrix: list[list[int]]):
- #   """Pad the matrix to ensure all areas are filled."""
- #   n = len(matrix)
- #   for r in range(n):
- #       for c in range(n):
-  #          if matrix[r][c] == -1:
-  #              matrix[r][c] = 0  # Fill unused areas with white (0)
-   # return matrix
     
 def timePattern(matrix: list[list[int]]):
     """Place timing patterns in the QR code matrix."""
     n = len(matrix)
     for i in range(8, n - 8):
         # Horizontal timing pattern
-        matrix[6][i] = 1 if i % 2 == 0 else 0
+        matrix[6][i] = 5 if i % 2 == 0 else 4
         # Vertical timing pattern
-        matrix[i][6] = 1 if i % 2 == 0 else 0
+        matrix[i][6] = 5 if i % 2 == 0 else 4
 def reserve_format_info_areas(matrix: list[list[int]]):
     """Reserve format information areas in the QR code matrix with placeholders (-2)."""
     n = len(matrix)
@@ -269,7 +261,7 @@ def place_patterns(matrix: list[list[int]]):
     finderPattern(0, edge, matrix)         # Top-right
     finderPattern(edge, 0, matrix)         # Bottom-left
 
-    # Place alignment pattern (for version 1, only one at (18,18))
+    # Place alignment pattern (only one at (18,18))
     alignmentPattern(16, 16, matrix)
     # Place timing patterns
     timePattern(matrix)
