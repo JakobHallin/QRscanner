@@ -1,5 +1,7 @@
 import string
-
+import matplotlib.pyplot as plt
+#pip install matplotlib
+import numpy as np
 
 print("will try with qr")
 def qr_encode_byte_mode(data: str) -> list[int]: 
@@ -189,7 +191,7 @@ def finderPattern(top: int, left: int, matrix: list[list[int]]):
         [5, 4, 5, 5, 5, 4, 5],
         [5, 4, 5, 5, 5, 4, 5],
         [5, 4, 5, 5, 5, 4, 5],
-        [5, 4, 4, 4, 0, 4, 5],
+        [5, 4, 4, 4, 4, 4, 5],
         [5, 5, 5, 5, 5, 5, 5],
     ]
     size = len(matrix)
@@ -372,3 +374,63 @@ place_format_info(matrix_with_data)
 print("looking at placement with data and mask and format info")
 print()
 print_matrix(matrix_with_data)
+
+def matrix_to_image(matrix: list[list[int]], filename="qr_matrix.png", scale=20):
+    """
+    Render a QR matrix into an image and save it.
+    
+    - 1 -> black
+    - 0 -> white
+    - 4 -> white (reserveed bits for patterns)
+    - 5 -> black (reserved bits for patterns)
+    """
+    n = len(matrix)
+
+    # Map values to colors
+    img = []
+    for row in matrix:
+        img_row = []
+        for cell in row:
+            if cell == 1:
+                img_row.append(0)      # black
+            elif cell == 0:
+                img_row.append(1)      # white
+            elif cell == 5:
+                img_row.append(0)    # reserved: black
+            else:
+                img_row.append(1)      # treat rest as white
+        img.append(img_row)
+
+    # Plot
+    plt.figure(figsize=(n*scale/100, n*scale/100))
+    plt.imshow(img, cmap="gray", interpolation="nearest")
+    plt.axis("off")
+    plt.savefig(filename, dpi=300, bbox_inches="tight", pad_inches=0)
+    plt.close()
+    print(f"QR matrix saved as {filename}")
+matrix_to_image(matrix_with_data)
+def image_to_matrix(filename="qr_matrix.png", modules=25) -> list[list[int]]:
+    """Convert an image back to a QR code logical matrix (e.g. 25x25)."""
+    img = plt.imread(filename)
+    if img.ndim == 3:
+        img = img[:, :, 0]  # grayscale
+
+    # Normalize (0=black, 1=white)
+    img = (img > 0.5).astype(int)
+
+    n_pixels = img.shape[0]
+    module_size = n_pixels // modules  # how many pixels per module
+
+    matrix = [[-1 for _ in range(modules)] for _ in range(modules)]
+
+    for r in range(modules):
+        for c in range(modules):
+            block = img[r*module_size:(r+1)*module_size,
+                        c*module_size:(c+1)*module_size]
+            # Majority vote inside block
+            matrix[r][c] = 1 if np.mean(block) < 0.5 else 0
+
+    return matrix
+read_matrix = image_to_matrix("qr_matrix.png")
+print("looking at read matrix from image")
+print_matrix(read_matrix)
