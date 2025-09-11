@@ -283,7 +283,7 @@ matrix = twentyfiveby25matrix()
 place_patterns(matrix)
 print_matrix(matrix)
 
-def place_data(matrix: list[list[int]], data: list[int]):
+def place_data(matrix: list[list[int]], data: list[int]): #not completly correct implemented does the snaking pattern but not the skipping of reserved areas
     """Place data bits into the QR code matrix."""
     n = len(matrix)
     bitstream = ''.join(format(byte, '08b') for byte in data)  # Convert data to bitstream
@@ -348,7 +348,7 @@ print("looking at placement with data and mask")
 print()
 print_matrix(matrix_with_data)
 
-def place_format_info(matrix, ec_level='L', mask=0):
+def place_format_info(matrix, ec_level='L', mask=0): #unsure if correct
     # Format strings for EC=L and mask=0 (precomputed)
     format_str = "111011111000100"
     n = len(matrix)
